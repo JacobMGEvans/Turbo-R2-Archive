@@ -1,0 +1,24 @@
+{
+	"name": "r2-archive",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy -j",
+		"start": "wrangler dev -j",
+		"build": "wrangler deploy -j --dry-run --outdir=./dist",
+		"type:check": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20230821.0",
+		"dotenv-cli": "^7.3.0",
+		"turbo": "^1.10.13",
+		"typescript": "^5.1.6",
+		"wrangler": "^3.6.0"
+	},
+	"dependencies": {
+		"@hono/zod-validator": "^0.1.8",
+		"hono": "^3.5.4",
+		"temporal-polyfill": "^0.1.1",
+		"zod": "^3.22.2"
+	}
+}

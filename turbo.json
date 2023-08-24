@@ -1,0 +1,14 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"remoteCache": {
+		"signature": true
+	},
+	"pipeline": {
+		"build": {
+			"outputs": ["dist/**"]
+		},
+		"type:check": {
+			"outputs": []
+		}
+	}
+}

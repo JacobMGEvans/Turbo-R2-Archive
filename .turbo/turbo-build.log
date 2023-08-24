@@ -1,0 +1,14 @@
+
+> r2-archive@0.0.0 build
+> wrangler deploy -j --dry-run --outdir=./dist
+
+ ⛅️ wrangler 3.6.0
+------------------
+Your worker has access to the following bindings:
+- R2 Buckets:
+  - R2_STORE: turbo-cache
+- Vars:
+  - ENVIRONMENT: "production"
+  - EXPIRATION_HOURS: 168
+--dry-run: exiting now.
+Total Upload: 235.71 KiB / gzip: 50.09 KiB
