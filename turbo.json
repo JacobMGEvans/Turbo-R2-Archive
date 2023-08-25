@@ -9,6 +9,10 @@
 		},
 		"type:check": {
 			"outputs": []
+		},
+		"start": {
+			"cache": false,
+			"persistent": true
 		}
 	}
 }

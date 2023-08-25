@@ -1,9 +1,9 @@
 import { deleteOldCache } from './autoCacheBust';
-import { artifactRouter } from './artifact';
+import artifact from './routes';
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-		return artifactRouter.fetch(request, env, ctx);
+		return artifact.fetch(request, env, ctx);
 	},
 	async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
 		await deleteOldCache(env);

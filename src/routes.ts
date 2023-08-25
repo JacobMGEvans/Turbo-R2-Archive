@@ -6,27 +6,26 @@ import { cors } from 'hono/cors';
 import { z } from 'zod';
 import { deleteOldCache } from './autoCacheBust';
 
-export const artifactRouter = new Hono<{ Bindings: Env }>();
-artifactRouter.route('/', artifactRouter);
+const router = new Hono<{ Bindings: Env }>();
 
 const paramValidator = z.object({ artifactID: z.string() });
 const queryValidator = z.object({ teamID: z.string().optional(), slug: z.string().optional() });
 
-artifactRouter.onError((err, c) => {
+router.onError((err, c) => {
 	if (err instanceof HTTPException) {
 		return err.getResponse();
 	}
 	return c.json({ error: err.message }, 500);
 });
 
-artifactRouter.use('*', cors());
+router.use('*', cors());
 
 // artifactRouter.use('/artifact/*', async (c, next) => {
 // 	const middleware = bearerAuth({ token: c.env.TURBO_TOKEN });
 // 	await middleware(c, next);
 // });
 
-artifactRouter.post('/manual-cache-bust', zValidator('json', z.object({ expireInHours: z.number().optional() })), async (c) => {
+router.post('/manual-cache-bust', zValidator('json', z.object({ expireInHours: z.number().optional() })), async (c) => {
 	const { expireInHours } = c.req.valid('json');
 	await deleteOldCache({
 		...c.env,
@@ -35,7 +34,7 @@ artifactRouter.post('/manual-cache-bust', zValidator('json', z.object({ expireIn
 	return c.json({ success: true });
 });
 
-artifactRouter.put('/v8/:artifactID', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
+router.put('/v8/:artifactID', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
 	const artifactID = c.req.valid('param').artifactID;
 	const { teamID, slug } = c.req.valid('query');
 
@@ -61,7 +60,7 @@ artifactRouter.put('/v8/:artifactID', zValidator('param', paramValidator), zVali
 	return c.json({ teamID, artifactID, storagePath: r2Object.key, size: r2Object.size }, 201);
 });
 
-artifactRouter.get('/v8/:artifactID/:teamId?', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
+router.get('/v8/:artifactID/:teamID?', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
 	const artifactID = c.req.valid('param').artifactID;
 	const { teamID, slug } = c.req.valid('query');
 
@@ -87,3 +86,5 @@ artifactRouter.get('/v8/:artifactID/:teamId?', zValidator('param', paramValidato
 	c.status(200);
 	return c.body(r2Object.body);
 });
+
+export default router;
