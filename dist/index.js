@@ -3868,20 +3868,20 @@ var SmartRouter = class {
     let i2 = 0;
     let res;
     for (; i2 < len; i2++) {
-      const router = routers[i2];
+      const router2 = routers[i2];
       try {
         routes.forEach((args) => {
-          router.add(...args);
+          router2.add(...args);
         });
-        res = router.match(method, path);
+        res = router2.match(method, path);
       } catch (e3) {
         if (e3 instanceof UnsupportedPathError) {
           continue;
         }
         throw e3;
       }
-      this.match = router.match.bind(router);
-      this.routers = [router];
+      this.match = router2.match.bind(router2);
+      this.routers = [router2];
       this.routes = void 0;
       break;
     }
@@ -7793,18 +7793,18 @@ var z2 = /* @__PURE__ */ Object.freeze({
   ZodError
 });
 
-// src/artifact.ts
-var artifactRouter = new Hono2();
-var paramValidator = z2.object({ artifactID: z2.string() });
-var queryValidator = z2.object({ teamID: z2.string().optional(), slug: z2.string().optional() });
-artifactRouter.onError((err, c2) => {
+// src/routes.ts
+var router = new Hono2();
+var paramValidator = z2.object({ artifactID: z2.string(), teamID: z2.string().optional() });
+var queryValidator = z2.object({ slug: z2.string().optional() });
+router.onError((err, c2) => {
   if (err instanceof HTTPException) {
     return err.getResponse();
   }
   return c2.json({ error: err.message }, 500);
 });
-artifactRouter.use("*", cors());
-artifactRouter.post("/manual-cache-bust", zValidator("json", z2.object({ expireInHours: z2.number().optional() })), async (c2) => {
+router.use("*", cors());
+router.post("manual-cache-bust", zValidator("json", z2.object({ expireInHours: z2.number().optional() })), async (c2) => {
   const { expireInHours } = c2.req.valid("json");
   await deleteOldCache({
     ...c2.env,
@@ -7812,9 +7812,10 @@ artifactRouter.post("/manual-cache-bust", zValidator("json", z2.object({ expireI
   });
   return c2.json({ success: true });
 });
-artifactRouter.put("/v8/:artifactID", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
+router.put("v8/:artifactID", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
   const artifactID = c2.req.valid("param").artifactID;
-  const { teamID, slug } = c2.req.valid("query");
+  const teamID = c2.req.valid("param").teamID;
+  const { slug } = c2.req.valid("query");
   if (!teamID && !slug) {
     return c2.json({ error: "MISSING_TEAM_ID" }, 400);
   }
@@ -7832,19 +7833,20 @@ artifactRouter.put("/v8/:artifactID", zValidator("param", paramValidator), zVali
   const r2Object = await c2.env.R2_STORE.put(`${teamID ?? slug}/${artifactID}`, c2.req.body, { customMetadata: r2Metadata });
   return c2.json({ teamID, artifactID, storagePath: r2Object.key, size: r2Object.size }, 201);
 });
-artifactRouter.get("/v8/:artifactID/:teamId?", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
+router.get("v8/:artifactID/:teamID?", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
   const artifactID = c2.req.valid("param").artifactID;
-  const { teamID, slug } = c2.req.valid("query");
+  const teamID = c2.req.valid("param").teamID;
+  const { slug } = c2.req.valid("query");
   if (!teamID && !slug) {
     return c2.json({ error: "MISSING_TEAM_ID" }, 400);
   }
-  if (artifactID === "all") {
-    const list = await c2.env.R2_STORE.list({ prefix: `${teamID ?? slug}/` });
-    return c2.json(list.objects.map((object) => object.key));
+  if (artifactID === "list") {
+    const list = await c2.env.R2_STORE.list();
+    return c2.json(list.objects.map((object) => object));
   }
   const r2Object = await c2.env.R2_STORE.get(`${teamID ?? slug}/${artifactID}`);
   if (!r2Object) {
-    return c2.json({ error: "NOT_FOUND" }, 404);
+    return c2.json({ error: "OBJECT_NOT_FOUND" }, 404);
   }
   c2.header("Content-Type", "application/octet-stream");
   if (r2Object.customMetadata?.artifactTag) {
@@ -7857,7 +7859,7 @@ artifactRouter.get("/v8/:artifactID/:teamId?", zValidator("param", paramValidato
 // src/index.ts
 var src_default = {
   async fetch(request, env, ctx) {
-    return artifactRouter.fetch(request, env, ctx);
+    return router.fetch(request, env, ctx);
   },
   async scheduled(_event, env, _ctx) {
     await deleteOldCache(env);
