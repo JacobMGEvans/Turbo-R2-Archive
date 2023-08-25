@@ -20,12 +20,12 @@ router.onError((err, c) => {
 
 router.use('*', cors());
 
-// artifactRouter.use('/artifact/*', async (c, next) => {
-// 	const middleware = bearerAuth({ token: c.env.TURBO_TOKEN });
-// 	await middleware(c, next);
-// });
+router.use('*', async (c, next) => {
+	const middleware = bearerAuth({ token: c.env.TURBO_TOKEN });
+	await middleware(c, next);
+});
 
-router.post('manual-cache-bust', zValidator('json', z.object({ expireInHours: z.number().optional() })), async (c) => {
+router.post('/artifacts/manual-cache-bust', zValidator('json', z.object({ expireInHours: z.number().optional() })), async (c) => {
 	const { expireInHours } = c.req.valid('json');
 	await deleteOldCache({
 		...c.env,
@@ -34,7 +34,7 @@ router.post('manual-cache-bust', zValidator('json', z.object({ expireInHours: z.
 	return c.json({ success: true });
 });
 
-router.put('v8/:artifactID', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
+router.put('/v8/artifacts/:artifactID', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
 	const { artifactID, teamID } = c.req.valid('param');
 	const { query } = c.req.valid('query');
 
@@ -60,7 +60,7 @@ router.put('v8/:artifactID', zValidator('param', paramValidator), zValidator('qu
 	return c.json({ teamID, artifactID, storagePath: r2Object.key, size: r2Object.size }, 201);
 });
 
-router.get('v8/:artifactID/:teamID?', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
+router.get('/v8/artifacts/:artifactID/:teamID?', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
 	const { artifactID, teamID } = c.req.valid('param');
 	const { query } = c.req.valid('query');
 
@@ -75,7 +75,7 @@ router.get('v8/:artifactID/:teamID?', zValidator('param', paramValidator), zVali
 
 	const r2Object = await c.env.R2_STORE.get(`${teamID ?? query}/${artifactID}`);
 	if (!r2Object) {
-		return c.json({ error: 'OBJECT_NOT_FOUND' }, 404);
+		return c.notFound();
 	}
 
 	c.header('Content-Type', 'application/octet-stream');

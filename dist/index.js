@@ -7796,7 +7796,7 @@ var z2 = /* @__PURE__ */ Object.freeze({
 // src/routes.ts
 var router = new Hono2();
 var paramValidator = z2.object({ artifactID: z2.string(), teamID: z2.string().optional() });
-var queryValidator = z2.object({ slug: z2.string().optional() });
+var queryValidator = z2.object({ query: z2.string().optional() });
 router.onError((err, c2) => {
   if (err instanceof HTTPException) {
     return err.getResponse();
@@ -7804,7 +7804,7 @@ router.onError((err, c2) => {
   return c2.json({ error: err.message }, 500);
 });
 router.use("*", cors());
-router.post("manual-cache-bust", zValidator("json", z2.object({ expireInHours: z2.number().optional() })), async (c2) => {
+router.post("/artifacts/manual-cache-bust", zValidator("json", z2.object({ expireInHours: z2.number().optional() })), async (c2) => {
   const { expireInHours } = c2.req.valid("json");
   await deleteOldCache({
     ...c2.env,
@@ -7812,11 +7812,10 @@ router.post("manual-cache-bust", zValidator("json", z2.object({ expireInHours: z
   });
   return c2.json({ success: true });
 });
-router.put("v8/:artifactID", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
-  const artifactID = c2.req.valid("param").artifactID;
-  const teamID = c2.req.valid("param").teamID;
-  const { slug } = c2.req.valid("query");
-  if (!teamID && !slug) {
+router.put("/v8/artifacts/:artifactID", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
+  const { artifactID, teamID } = c2.req.valid("param");
+  const { query } = c2.req.valid("query");
+  if (!teamID && !query) {
     return c2.json({ error: "MISSING_TEAM_ID" }, 400);
   }
   const contentType = c2.req.headers.get("Content-Type");
@@ -7830,23 +7829,22 @@ router.put("v8/:artifactID", zValidator("param", paramValidator), zValidator("qu
   if (artifactTag) {
     r2Metadata.artifactTag = artifactTag;
   }
-  const r2Object = await c2.env.R2_STORE.put(`${teamID ?? slug}/${artifactID}`, c2.req.body, { customMetadata: r2Metadata });
+  const r2Object = await c2.env.R2_STORE.put(`${teamID ?? query}/${artifactID}`, c2.req.body, { customMetadata: r2Metadata });
   return c2.json({ teamID, artifactID, storagePath: r2Object.key, size: r2Object.size }, 201);
 });
-router.get("v8/:artifactID/:teamID?", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
-  const artifactID = c2.req.valid("param").artifactID;
-  const teamID = c2.req.valid("param").teamID;
-  const { slug } = c2.req.valid("query");
-  if (!teamID && !slug) {
+router.get("/v8/artifacts/:artifactID/:teamID?", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
+  const { artifactID, teamID } = c2.req.valid("param");
+  const { query } = c2.req.valid("query");
+  if (!teamID && !query) {
     return c2.json({ error: "MISSING_TEAM_ID" }, 400);
   }
   if (artifactID === "list") {
     const list = await c2.env.R2_STORE.list();
     return c2.json(list.objects.map((object) => object));
   }
-  const r2Object = await c2.env.R2_STORE.get(`${teamID ?? slug}/${artifactID}`);
+  const r2Object = await c2.env.R2_STORE.get(`${teamID ?? query}/${artifactID}`);
   if (!r2Object) {
-    return c2.json({ error: "OBJECT_NOT_FOUND" }, 404);
+    return c2.notFound();
   }
   c2.header("Content-Type", "application/octet-stream");
   if (r2Object.customMetadata?.artifactTag) {

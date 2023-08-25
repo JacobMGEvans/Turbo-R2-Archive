@@ -11,4 +11,4 @@ Your worker has access to the following bindings:
   - ENVIRONMENT: "production"
   - EXPIRATION_HOURS: 168
 --dry-run: exiting now.
-Total Upload: 232.78 KiB / gzip: 49.20 KiB
+Total Upload: 232.70 KiB / gzip: 49.18 KiB
