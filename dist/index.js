@@ -2458,8 +2458,17 @@ var e2 = { ...zr().Intl, DateTimeFormat: kr };
 
 // src/isOlderThan.ts
 function isOlderThan(date, hours) {
+  const convertedDate = s2.PlainDateTime.from({
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+    hour: date.getHours(),
+    minute: date.getMinutes(),
+    second: date.getSeconds(),
+    millisecond: date.getMilliseconds()
+  });
   const now = s2.Now.plainDateTimeISO();
-  const diffInHours = now.since(date, { largestUnit: "hours" }).hours;
+  const diffInHours = now.since(convertedDate, { largestUnit: "hours" }).hours;
   return diffInHours >= Number(hours);
 }
 
@@ -2484,17 +2493,7 @@ async function deleteKeys(env, keysForDeletion) {
 async function processList(list, env) {
   const keysForDeletion = R2KeysForDeletion();
   for (const object of list.objects) {
-    const date = object.uploaded;
-    const convertedDate = s2.PlainDateTime.from({
-      year: date.getFullYear(),
-      month: date.getMonth() + 1,
-      day: date.getDate(),
-      hour: date.getHours(),
-      minute: date.getMinutes(),
-      second: date.getSeconds(),
-      millisecond: date.getMilliseconds()
-    });
-    if (isOlderThan(convertedDate, env.EXPIRATION_HOURS)) {
+    if (isOlderThan(object.uploaded, env.EXPIRATION_HOURS)) {
       keysForDeletion.add(object.key);
     }
   }
@@ -4098,109 +4097,6 @@ var Hono2 = class extends Hono {
       routers: [new RegExpRouter(), new TrieRouter()]
     });
   }
-};
-
-// node_modules/hono/dist/utils/crypto.js
-var sha256 = async (data) => {
-  const algorithm = { name: "SHA-256", alias: "sha256" };
-  const hash = await createHash(data, algorithm);
-  return hash;
-};
-var createHash = async (data, algorithm) => {
-  let sourceBuffer;
-  if (data instanceof ReadableStream) {
-    let body = "";
-    const reader = data.getReader();
-    await reader?.read().then(async (chuck) => {
-      const value = await createHash(chuck.value || "", algorithm);
-      body += value;
-    });
-    return body;
-  }
-  if (ArrayBuffer.isView(data) || data instanceof ArrayBuffer) {
-    sourceBuffer = data;
-  } else {
-    if (typeof data === "object") {
-      data = JSON.stringify(data);
-    }
-    sourceBuffer = new TextEncoder().encode(String(data));
-  }
-  if (crypto && crypto.subtle) {
-    const buffer = await crypto.subtle.digest(
-      {
-        name: algorithm.name
-      },
-      sourceBuffer
-    );
-    const hash = Array.prototype.map.call(new Uint8Array(buffer), (x2) => ("00" + x2.toString(16)).slice(-2)).join("");
-    return hash;
-  }
-  return null;
-};
-
-// node_modules/hono/dist/utils/buffer.js
-var timingSafeEqual = async (a2, b2, hashFunction) => {
-  if (!hashFunction) {
-    hashFunction = sha256;
-  }
-  const sa = await hashFunction(a2);
-  const sb = await hashFunction(b2);
-  if (!sa || !sb) {
-    return false;
-  }
-  return sa === sb && a2 === b2;
-};
-
-// node_modules/hono/dist/middleware/bearer-auth/index.js
-var TOKEN_STRINGS = "[A-Za-z0-9._~+/-]+=*";
-var PREFIX = "Bearer";
-var bearerAuth = (options) => {
-  if (!options.token) {
-    throw new Error('bearer auth middleware requires options for "token"');
-  }
-  if (!options.realm) {
-    options.realm = "";
-  }
-  if (!options.prefix) {
-    options.prefix = PREFIX;
-  }
-  const realm = options.realm?.replace(/"/g, '\\"');
-  return async (c2, next) => {
-    const headerToken = c2.req.headers.get("Authorization");
-    if (!headerToken) {
-      const res = new Response("Unauthorized", {
-        status: 401,
-        headers: {
-          "WWW-Authenticate": `${options.prefix} realm="` + realm + '"'
-        }
-      });
-      throw new HTTPException(401, { res });
-    } else {
-      const regexp = new RegExp("^" + options.prefix + " +(" + TOKEN_STRINGS + ") *$");
-      const match = regexp.exec(headerToken);
-      if (!match) {
-        const res = new Response("Bad Request", {
-          status: 400,
-          headers: {
-            "WWW-Authenticate": `${options.prefix} error="invalid_request"`
-          }
-        });
-        throw new HTTPException(400, { res });
-      } else {
-        const equal = await timingSafeEqual(options.token, match[1], options.hashFunction);
-        if (!equal) {
-          const res = new Response("Unauthorized", {
-            status: 401,
-            headers: {
-              "WWW-Authenticate": `${options.prefix} error="invalid_token"`
-            }
-          });
-          throw new HTTPException(401, { res });
-        }
-      }
-    }
-    await next();
-  };
 };
 
 // node_modules/hono/dist/middleware/cors/index.js
@@ -7897,24 +7793,27 @@ var z2 = /* @__PURE__ */ Object.freeze({
   ZodError
 });
 
-// src/archive.ts
-var archiveRouter = new Hono2();
-var paramValidator = zValidator("param", z2.object({ archiveID: z2.string() }));
-var teamQueryValidator = zValidator("query", z2.object({ teamID: z2.string().optional(), slug: z2.string().optional() }));
-archiveRouter.onError((err, c2) => {
+// src/artifact.ts
+var artifactRouter = new Hono2();
+var paramValidator = z2.object({ artifactID: z2.string() });
+var queryValidator = z2.object({ teamID: z2.string().optional(), slug: z2.string().optional() });
+artifactRouter.onError((err, c2) => {
   if (err instanceof HTTPException) {
     return err.getResponse();
   }
   return c2.json({ error: err.message }, 500);
 });
-archiveRouter.use("*", cors());
-archiveRouter.use("/archive/*", async (c2, next) => {
-  const middleware = bearerAuth({ token: c2.env.TURBO_TOKEN });
-  await middleware(c2, next);
+artifactRouter.use("*", cors());
+artifactRouter.post("/manual-cache-bust", zValidator("json", z2.object({ expireInHours: z2.number().optional() })), async (c2) => {
+  const { expireInHours } = c2.req.valid("json");
+  await deleteOldCache({
+    ...c2.env,
+    EXPIRATION_HOURS: expireInHours ?? c2.env.EXPIRATION_HOURS
+  });
+  return c2.json({ success: true });
 });
-archiveRouter.route("/archive", archiveRouter);
-archiveRouter.put("/:archiveID", paramValidator, teamQueryValidator, async (c2) => {
-  const archiveID = c2.req.valid("param").archiveID;
+artifactRouter.put("/v8/:artifactID", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
+  const artifactID = c2.req.valid("param").artifactID;
   const { teamID, slug } = c2.req.valid("query");
   if (!teamID && !slug) {
     return c2.json({ error: "MISSING_TEAM_ID" }, 400);
@@ -7924,36 +7823,32 @@ archiveRouter.put("/:archiveID", paramValidator, teamQueryValidator, async (c2) 
     return c2.json({ error: "EXPECTED_CONTENT_TYPE_OCTET_STREAM" }, 400);
   }
   const r2Metadata = {
-    archiveTag: ""
+    artifactTag: ""
   };
-  const archiveTag = c2.req.headers.get("x-archive-tag");
-  if (archiveTag) {
-    r2Metadata.archiveTag = archiveTag;
+  const artifactTag = c2.req.headers.get("x-artifact-tag");
+  if (artifactTag) {
+    r2Metadata.artifactTag = artifactTag;
   }
-  const r2Object = await c2.env.R2_STORE.put(`${teamID ?? slug}/${archiveID}`, c2.req.body, { customMetadata: r2Metadata });
-  return c2.json({ teamID, archiveID, storagePath: r2Object.key, size: r2Object.size }, 201);
+  const r2Object = await c2.env.R2_STORE.put(`${teamID ?? slug}/${artifactID}`, c2.req.body, { customMetadata: r2Metadata });
+  return c2.json({ teamID, artifactID, storagePath: r2Object.key, size: r2Object.size }, 201);
 });
-archiveRouter.post("/manual-cache-bust", zValidator("json", z2.object({ expireInHours: z2.number().optional() })), async (c2) => {
-  const { expireInHours } = c2.req.valid("json");
-  await deleteOldCache({
-    ...c2.env,
-    EXPIRATION_HOURS: expireInHours ?? c2.env.EXPIRATION_HOURS
-  });
-  return c2.json({ success: true });
-});
-archiveRouter.get("/:archiveID/:teamId?", paramValidator, teamQueryValidator, async (c2) => {
-  const archiveID = c2.req.valid("param").archiveID;
+artifactRouter.get("/v8/:artifactID/:teamId?", zValidator("param", paramValidator), zValidator("query", queryValidator), async (c2) => {
+  const artifactID = c2.req.valid("param").artifactID;
   const { teamID, slug } = c2.req.valid("query");
   if (!teamID && !slug) {
     return c2.json({ error: "MISSING_TEAM_ID" }, 400);
   }
-  const r2Object = await c2.env.R2_STORE.get(`${teamID ?? slug}/${archiveID}`);
+  if (artifactID === "all") {
+    const list = await c2.env.R2_STORE.list({ prefix: `${teamID ?? slug}/` });
+    return c2.json(list.objects.map((object) => object.key));
+  }
+  const r2Object = await c2.env.R2_STORE.get(`${teamID ?? slug}/${artifactID}`);
   if (!r2Object) {
     return c2.json({ error: "NOT_FOUND" }, 404);
   }
   c2.header("Content-Type", "application/octet-stream");
-  if (r2Object.customMetadata?.archiveTag) {
-    c2.header("x-archive-tag", r2Object.customMetadata.archiveTag);
+  if (r2Object.customMetadata?.artifactTag) {
+    c2.header("x-artifact-tag", r2Object.customMetadata.artifactTag);
   }
   c2.status(200);
   return c2.body(r2Object.body);
@@ -7962,7 +7857,7 @@ archiveRouter.get("/:archiveID/:teamId?", paramValidator, teamQueryValidator, as
 // src/index.ts
 var src_default = {
   async fetch(request, env, ctx) {
-    return archiveRouter.fetch(request, env, ctx);
+    return artifactRouter.fetch(request, env, ctx);
   },
   async scheduled(_event, env, _ctx) {
     await deleteOldCache(env);

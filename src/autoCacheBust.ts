@@ -1,4 +1,3 @@
-import { Temporal } from 'temporal-polyfill';
 import { isOlderThan } from './isOlderThan';
 
 export const RECORDS_BATCH_SIZE = 500;

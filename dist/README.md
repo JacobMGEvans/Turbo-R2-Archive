@@ -1,1 +1,1 @@
-This folder contains the built output assets for the worker "r2-archive" generated at 2023-08-24T20:17:32.254Z.
+This folder contains the built output assets for the worker "r2-archive" generated at 2023-08-25T16:37:03.374Z.
