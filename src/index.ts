@@ -1,4 +1,4 @@
-import { deleteOldCache } from './autoCacheBust';
+import { bustOldCache } from './autoCacheBust';
 import { router } from './routes';
 
 export default {
@@ -6,6 +6,6 @@ export default {
 		return router.fetch(request, env, ctx);
 	},
 	async scheduled(_event: ScheduledEvent, env: Env, _ctx: ExecutionContext) {
-		await deleteOldCache(env);
+		await bustOldCache(env);
 	},
 };
