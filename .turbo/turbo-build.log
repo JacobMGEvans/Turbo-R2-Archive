@@ -8,7 +8,6 @@ Your worker has access to the following bindings:
 - R2 Buckets:
   - R2_STORE: turbo-cache
 - Vars:
-  - ENVIRONMENT: "production"
   - EXPIRATION_HOURS: 168
 --dry-run: exiting now.
-Total Upload: 235.75 KiB / gzip: 50.10 KiB
+Total Upload: 235.75 KiB / gzip: 50.11 KiB

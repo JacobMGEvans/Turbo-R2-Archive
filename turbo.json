@@ -5,11 +5,11 @@
 	},
 	"pipeline": {
 		"build": {
-			"outputs": ["dist/**"]
+			"outputs": ["dist/**"],
+			"outputMode": "full",
+			"inputs": ["src/**"]
 		},
-		"type:check": {
-			"outputs": []
-		},
+		"type:check": {},
 		"start": {
 			"cache": false,
 			"persistent": true

@@ -9,7 +9,7 @@ import { deleteOldCache } from './autoCacheBust';
 export const router = new Hono<{ Bindings: Env }>();
 
 const paramValidator = z.object({ artifactID: z.string(), teamID: z.string().optional() });
-const queryValidator = z.object({ query: z.string().optional() });
+const queryValidator = z.object({ teamId: z.string().optional(), slug: z.string().optional() });
 
 router.onError((err, c) => {
 	if (err instanceof HTTPException) {
@@ -21,7 +21,7 @@ router.onError((err, c) => {
 router.use('*', cors());
 
 router.use('*', async (c, next) => {
-	const middleware = bearerAuth({ token: c.env.TURBO_TOKEN });
+	const middleware = bearerAuth({ token: 'SECRET' });
 	await middleware(c, next);
 });
 
@@ -35,37 +35,37 @@ router.post('/artifacts/manual-cache-bust', zValidator('json', z.object({ expire
 });
 
 router.put('/v8/artifacts/:artifactID', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
-	const { artifactID, teamID } = c.req.valid('param');
-	const { query } = c.req.valid('query');
+	const { artifactID } = c.req.valid('param');
+	const { teamId, slug } = c.req.valid('query');
+	const teamID = teamId ?? slug;
 
-	if (!teamID && !query) {
+	if (!teamID) {
 		return c.json({ error: 'MISSING_TEAM_ID' }, 400);
 	}
 
-	const contentType = c.req.headers.get('Content-Type');
-	if (contentType !== 'application/octet-stream') {
-		return c.json({ error: 'EXPECTED_CONTENT_TYPE_OCTET_STREAM' }, 400);
+	if (c.req.headers.get('Content-Type') !== 'application/octet-stream') {
+		return c.json({ error: 'EXPECTED_CONTENT_TYPE_OCTET_STREAM' }, 415);
 	}
 
-	const r2Metadata = {
-		artifactTag: '',
-	};
 	const artifactTag = c.req.headers.get('x-artifact-tag');
-	if (artifactTag) {
-		r2Metadata.artifactTag = artifactTag;
-	}
-
-	const r2Object = await c.env.R2_STORE.put(`${teamID ?? query}/${artifactID}`, c.req.body, { customMetadata: r2Metadata });
+	const r2Object = await c.env.R2_STORE.put(`${teamID}/${artifactID}`, c.req.body, {
+		customMetadata: artifactTag
+			? {
+					artifactTag,
+			  }
+			: undefined,
+	});
 
 	return c.json({ teamID, artifactID, storagePath: r2Object.key, size: r2Object.size }, 201);
 });
 
-router.get('/v8/artifacts/:artifactID/:teamID?', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
-	const { artifactID, teamID } = c.req.valid('param');
-	const { query } = c.req.valid('query');
+router.get('/artifacts/:artifactID/:teamID?', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
+	const { artifactID } = c.req.valid('param');
+	const { teamId, slug } = c.req.valid('query');
+	const teamID = teamId ?? slug;
 
-	if (!teamID && !query) {
-		return c.json({ error: 'MISSING_TEAM_ID' }, 400);
+	if (teamID) {
+		return c.json({ error: 'MISSING_TEAM_ID & QUERY' }, 400);
 	}
 
 	if (artifactID === 'list') {
@@ -73,7 +73,7 @@ router.get('/v8/artifacts/:artifactID/:teamID?', zValidator('param', paramValida
 		return c.json(list.objects.map((object) => object));
 	}
 
-	const r2Object = await c.env.R2_STORE.get(`${teamID ?? query}/${artifactID}`);
+	const r2Object = await c.env.R2_STORE.get(`${teamID}/${artifactID}`);
 	if (!r2Object) {
 		return c.notFound();
 	}
@@ -85,4 +85,10 @@ router.get('/v8/artifacts/:artifactID/:teamID?', zValidator('param', paramValida
 
 	c.status(200);
 	return c.body(r2Object.body);
+});
+
+router.post('/v8/artifacts/events', (c) => {
+	// Hook this up to Cloudflare Analytics
+	c.status(204);
+	return c.json({});
 });
