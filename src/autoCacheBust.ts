@@ -18,7 +18,7 @@ export function isOlderThan(date: Date, hours: number | string): boolean {
 
 export const RECORDS_BATCH_SIZE = 500;
 
-function R2KeysForDeletion() {
+function R2cacheDeletion() {
 	let keys: string[] = [];
 	return {
 		add: function (key: string) {
@@ -30,28 +30,28 @@ function R2KeysForDeletion() {
 	};
 }
 
-async function deleteKeys(env: Env, keysForDeletion: ReturnType<typeof R2KeysForDeletion>) {
-	if (keysForDeletion.getKeys().length > 0) {
-		await env.R2_STORE.delete(keysForDeletion.getKeys());
+async function deleteKeys(env: Env, cacheDeletion: ReturnType<typeof R2cacheDeletion>) {
+	if (cacheDeletion.getKeys().length > 0) {
+		await env.R2_STORE.delete(cacheDeletion.getKeys());
 	}
 }
 
 async function processList(list: R2Objects, env: Env) {
-	const keysForDeletion = R2KeysForDeletion();
+	const cacheDeletion = R2cacheDeletion();
 	for (const object of list.objects) {
 		if (isOlderThan(object.uploaded, env.EXPIRATION_HOURS)) {
-			keysForDeletion.add(object.key);
+			cacheDeletion.add(object.key);
 		}
 	}
 
-	await deleteKeys(env, keysForDeletion);
+	await deleteKeys(env, cacheDeletion);
 }
 
-export async function deleteOldCache(env: Env, cursor?: string) {
+export async function bustOldCache(env: Env, cursor?: string) {
 	const list = await env.R2_STORE.list({ limit: RECORDS_BATCH_SIZE, cursor });
 	await processList(list, env);
 
 	if (list.truncated) {
-		await deleteOldCache(env, list.cursor);
+		await bustOldCache(env, list.cursor);
 	}
 }
