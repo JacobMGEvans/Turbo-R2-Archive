@@ -59,10 +59,11 @@ router.put('/v8/artifacts/:artifactID', zValidator('param', paramValidator), zVa
 	return c.json({ teamID, artifactID, storagePath: r2Object.key, size: r2Object.size }, 201);
 });
 
-router.get('/artifacts/:artifactID/:teamID?', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
+router.get('/v8/artifacts/:artifactID/:teamID?', zValidator('param', paramValidator), zValidator('query', queryValidator), async (c) => {
 	const { artifactID } = c.req.valid('param');
 	const { teamId, slug } = c.req.valid('query');
 	const teamID = teamId ?? slug;
+	console.log('IDs', { teamID, artifactID });
 
 	if (teamID) {
 		return c.json({ error: 'MISSING_TEAM_ID & QUERY' }, 400);
@@ -90,5 +91,5 @@ router.get('/artifacts/:artifactID/:teamID?', zValidator('param', paramValidator
 router.post('/v8/artifacts/events', (c) => {
 	// Hook this up to Cloudflare Analytics
 	c.status(204);
-	return c.json({});
+	return c.body(null);
 });
