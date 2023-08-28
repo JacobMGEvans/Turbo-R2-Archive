@@ -2,6 +2,14 @@
 	"name": "r2-archive",
 	"version": "0.0.0",
 	"private": true,
+	"description": "TurboRepo API Compliant Remote Caching w/ Cloudflare Workers using R2",
+	"keywords": [
+		"workers",
+		"cloudflare",
+		"typescript",
+		"turborepo",
+		"remote cache"
+	],
 	"scripts": {
 		"deploy": "wrangler deploy -j",
 		"start": "wrangler dev -j",
