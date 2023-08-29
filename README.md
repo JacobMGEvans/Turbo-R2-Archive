@@ -65,3 +65,12 @@ https -A bearer -a <TURBO_TOKEN> POST <baseURL>/artifacts/manual-cache-bust expi
 ```
 
 Setting the value to `0` will purge the entire cache.
+
+## How can I develop & test locally?
+
+Well since we are already using Cloudflare, let's keep that going. `cloudflared` allows for creating a tunnel to your `http://127.0.0.1:8787` and exposing it to the internet. This will allow others direct their TurboRepo to the local dev server by setting`TURBO_API` to `<host>`.
+The command to create a tunnel looks like:
+
+```bash
+cloudflared tunnel --hostname <host> --url http://127.0.0.1:8787/ --name r2-archive (or whatever you want to name it)
+```
