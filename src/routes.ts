@@ -11,11 +11,11 @@ export const router = new Hono<{ Bindings: Env }>();
 const paramValidator = z.object({ artifactID: z.string(), teamID: z.string().optional() });
 const queryValidator = z.object({ teamId: z.string().optional(), slug: z.string().optional() });
 
-router.onError((err, c) => {
-	if (err instanceof HTTPException) {
-		return err.getResponse();
+router.onError((error, c) => {
+	if (error instanceof HTTPException) {
+		return error.getResponse();
 	}
-	return c.json({ error: err.message }, 500);
+	return c.json({ ...error }, 500);
 });
 
 router.use('*', cors());
@@ -27,9 +27,12 @@ router.use('*', async (c, next) => {
 
 router.post('/artifacts/manual-cache-bust', zValidator('json', z.object({ expireInHours: z.number().optional() })), async (c) => {
 	const { expireInHours } = c.req.valid('json');
+	/**
+	 * manual cache busting, if no expiration hours are provided, it will bust the entire cache.
+	 */
 	await bustOldCache({
 		...c.env,
-		EXPIRATION_HOURS: expireInHours ?? c.env.EXPIRATION_HOURS,
+		EXPIRATION_HOURS: expireInHours ?? 0,
 	});
 	return c.json({ success: true });
 });
