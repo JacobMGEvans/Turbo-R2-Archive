@@ -35,7 +35,7 @@ function r2CacheCollector() {
 
 async function deleteKeys(env: Env, cacheDeletion: ReturnType<typeof r2CacheCollector>) {
 	if (cacheDeletion.getKeys().length > 0) {
-		await env.R2_STORE.delete(cacheDeletion.getKeys());
+		await env.R2_ARTIFACT_ARCHIVE.delete(cacheDeletion.getKeys());
 	}
 }
 
@@ -51,7 +51,7 @@ async function processList(list: R2Objects, env: Env) {
 }
 
 export async function bustOldCache(env: Env, cursor?: string) {
-	const list = await env.R2_STORE.list({ limit: RECORDS_BATCH_SIZE, cursor });
+	const list = await env.R2_ARTIFACT_ARCHIVE.list({ limit: RECORDS_BATCH_SIZE, cursor });
 	await processList(list, env);
 
 	if (list.truncated) {

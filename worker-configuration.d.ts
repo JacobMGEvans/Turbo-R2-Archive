@@ -2,6 +2,6 @@
 type Env = {
 	ENVIRONMENT: 'production';
 	EXPIRATION_HOURS: '168' | number;
-	R2_STORE: R2Bucket;
+	R2_ARTIFACT_ARCHIVE: R2Bucket;
 	TURBO_TOKEN: string;
 };

@@ -48,7 +48,7 @@ router.put('/v8/artifacts/:artifactID', zValidator('param', paramValidator), zVa
 	}
 
 	const artifactTag = c.req.headers.get('x-artifact-tag');
-	const r2Object = await c.env.R2_STORE.put(`${teamID}/${artifactID}`, c.req.body, {
+	const r2Object = await c.env.R2_ARTIFACT_ARCHIVE.put(`${teamID}/${artifactID}`, c.req.body, {
 		customMetadata: artifactTag
 			? {
 					artifactTag,
@@ -69,11 +69,11 @@ router.get('/v8/artifacts/:artifactID', zValidator('param', paramValidator), zVa
 	}
 
 	if (artifactID === 'list') {
-		const list = await c.env.R2_STORE.list();
+		const list = await c.env.R2_ARTIFACT_ARCHIVE.list();
 		return c.json(list.objects.map((object) => object));
 	}
 
-	const r2Object = await c.env.R2_STORE.get(`${teamID}/${artifactID}`);
+	const r2Object = await c.env.R2_ARTIFACT_ARCHIVE.get(`${teamID}/${artifactID}`);
 	if (!r2Object) {
 		return c.notFound();
 	}
