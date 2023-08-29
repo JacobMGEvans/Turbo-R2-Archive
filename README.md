@@ -19,6 +19,16 @@ TURBO_TOKEN=<value> # whatever is set in the worker secret
 TURBO_REMOTE_CACHE_SIGNATURE_KEY=<value> # needs to be the same for every one using the same cache
 ```
 
+### Turbo Project Config
+
+To utilize the `TURBO_REMOTE_CACHE_SIGNATURE_KEY` which will increase the security of the remote cache, the project config will need to be updated to include the following:
+
+```json
+{
+	"remoteCache": { "signature": true }
+}
+```
+
 ## Worker Configuration
 
 The endpoints are protected by a bearer token. The token is stored as a secret in the Worker. The token can be set with the following command:
