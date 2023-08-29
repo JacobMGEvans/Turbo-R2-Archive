@@ -10,7 +10,7 @@ This will require a Cloudflare account, with a zone and R2.
 
 Utilizing `.env` file to store the variables for Turborepo API & Worker. The `.env` file is not committed to the repository. The `.env` file should be in the root of the project directory. The `.env` file should contain the following variables.
 
-The commands are ran with `dotenv` cli `npx dotenv -- npx turbo <command>` to inject the environment variables into the command process environment.
+The commands are ran with `dotenv` cli `pnpm exec dotenv -- pnpm exec turbo <command>` to inject the environment variables into the command process environment.
 
 ```bash
 TURBO_API=<baseURL> # https://something.com
@@ -67,6 +67,16 @@ https -A bearer -a <TURBO_TOKEN> POST <baseURL>/artifacts/manual-cache-bust expi
 Setting the value to `0` will purge the entire cache.
 
 ## How can I develop & test locally?
+
+### Running the Worker Locally
+
+The Worker can be run, locally with the `package.json` script `start`:
+
+```bash
+pnpm start
+```
+
+### TurboRepo Testing Local Server
 
 Well since we are already using Cloudflare, let's keep that going. `cloudflared` allows for creating a tunnel to your `http://127.0.0.1:8787` and exposing it to the internet. This will allow others direct their TurboRepo to the local dev server by setting`TURBO_API` to `<host>`.
 The command to create a tunnel looks like:
