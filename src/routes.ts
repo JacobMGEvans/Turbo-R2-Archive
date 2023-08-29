@@ -4,7 +4,7 @@ import { HTTPException } from 'hono/http-exception';
 import { bearerAuth } from 'hono/bearer-auth';
 import { cors } from 'hono/cors';
 import { z } from 'zod';
-import { deleteOldCache } from './autoCacheBust';
+import { bustOldCache } from './autoCacheBust';
 
 export const router = new Hono<{ Bindings: Env }>();
 
@@ -27,7 +27,7 @@ router.use('*', async (c, next) => {
 
 router.post('/artifacts/manual-cache-bust', zValidator('json', z.object({ expireInHours: z.number().optional() })), async (c) => {
 	const { expireInHours } = c.req.valid('json');
-	await deleteOldCache({
+	await bustOldCache({
 		...c.env,
 		EXPIRATION_HOURS: expireInHours ?? c.env.EXPIRATION_HOURS,
 	});

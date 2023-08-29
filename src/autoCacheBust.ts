@@ -16,9 +16,12 @@ export function isOlderThan(date: Date, hours: number | string): boolean {
 	return diffInHours >= Number(hours);
 }
 
-export const RECORDS_BATCH_SIZE = 500;
+const RECORDS_BATCH_SIZE = 500;
 
-function R2cacheDeletion() {
+/**
+ * Creates a cache object with two methods: add and getKeys.
+ * */
+function r2CacheCollector() {
 	let keys: string[] = [];
 	return {
 		add: function (key: string) {
@@ -30,21 +33,21 @@ function R2cacheDeletion() {
 	};
 }
 
-async function deleteKeys(env: Env, cacheDeletion: ReturnType<typeof R2cacheDeletion>) {
+async function deleteKeys(env: Env, cacheDeletion: ReturnType<typeof r2CacheCollector>) {
 	if (cacheDeletion.getKeys().length > 0) {
 		await env.R2_STORE.delete(cacheDeletion.getKeys());
 	}
 }
 
 async function processList(list: R2Objects, env: Env) {
-	const cacheDeletion = R2cacheDeletion();
+	const r2CacheToDelete = r2CacheCollector();
 	for (const object of list.objects) {
 		if (isOlderThan(object.uploaded, env.EXPIRATION_HOURS)) {
-			cacheDeletion.add(object.key);
+			r2CacheToDelete.add(object.key);
 		}
 	}
 
-	await deleteKeys(env, cacheDeletion);
+	await deleteKeys(env, r2CacheToDelete);
 }
 
 export async function bustOldCache(env: Env, cursor?: string) {
