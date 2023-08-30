@@ -8,7 +8,7 @@ This will require a Cloudflare account, with a zone and R2.
 
 ## Environment Variables
 
-Utilizing `.env` file to store the variables for Turborepo API & Worker. The `.env` file is not committed to the repository. The `.env` file should be in the root of the project directory. The `.env` file should contain the following variables.
+Utilizing `.env` file to store the variables for Turborepo API & Worker. The `.env` file should be in the root of the project directory. The `.env` file should contain the following variables. Be sure to add the `.env` file to `.gitignore` to prevent it from being committed to the repository.
 
 The commands are ran with `dotenv` cli `pnpm exec dotenv -- pnpm exec turbo <command>` to inject the environment variables into the command process environment.
 
