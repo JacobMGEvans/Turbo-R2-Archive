@@ -1,5 +1,7 @@
 # Turbo R2 Archive
 
+[![Deploy to Cloudflare Workers](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jacobMGEvans/Turbo-R2-Archive)
+
 ## Overview
 
 This is a Worker that will act as an event server for caching TurboRepo artifacts. Compliant with the TurboRepo API, for remote caching, it will store the cache artifacts in a Cloudflare R2 bucket and purge the cache on a schedule. This allows for all the benefits of remote caching TurboRepo artifacts on Cloudflare's edge network.
