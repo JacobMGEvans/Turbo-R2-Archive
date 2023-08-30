@@ -47,7 +47,7 @@ router.put('/v8/artifacts/:artifactID', zValidator('param', paramValidator), zVa
 	}
 
 	if (c.req.headers.get('Content-Type') !== 'application/octet-stream') {
-		return c.json({ error: 'EXPECTED_CONTENT_TYPE_OCTET_STREAM' }, 415);
+		return c.json({ error: 'EXPECTED_OCTET_STREAM' }, 415);
 	}
 
 	const artifactTag = c.req.headers.get('x-artifact-tag');
