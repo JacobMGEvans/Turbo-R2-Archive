@@ -19,7 +19,7 @@ TURBO_TOKEN=<value> # whatever is set in the worker secret
 TURBO_REMOTE_CACHE_SIGNATURE_KEY=<value> # needs to be the same for every one using the same cache
 ```
 
-### Turbo Project Config
+## Turbo Project Config
 
 To utilize the `TURBO_REMOTE_CACHE_SIGNATURE_KEY` which will increase the security of the remote cache, the project config will need to be updated to include the following:
 
@@ -68,6 +68,8 @@ Setting the value to `0` will purge the entire cache.
 
 ## How can I develop & test locally?
 
+This project is primarily self-service and is meant to be forked and modified to fit your needs. The following instructions will help you get started.
+
 ### Running the Worker Locally
 
 The Worker can be run, locally with the `package.json` script `start`:
@@ -84,3 +86,13 @@ The command to create a tunnel looks like:
 ```bash
 cloudflared tunnel --hostname <host> --url http://127.0.0.1:8787/ --name r2-archive (or whatever you want to name it)
 ```
+
+## How can I deploy this?
+
+Fork this repo, have a Cloudflare account, and run the following command:
+
+```bash
+pnpm deploy
+```
+
+You now have a TurboRepo API compliant event server that will cache artifacts on Cloudflare's edge network.
