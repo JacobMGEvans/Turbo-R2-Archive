@@ -1,18 +1,10 @@
-import { Temporal } from 'temporal-polyfill';
+export function isOlderThan(date: Date, hours: number | string) {
+	const now = new Date();
 
-export function isOlderThan(date: Date, hours: number | string): boolean {
-	const convertedDate = Temporal.PlainDateTime.from({
-		year: date.getFullYear(),
-		month: date.getMonth() + 1,
-		day: date.getDate(),
-		hour: date.getHours(),
-		minute: date.getMinutes(),
-		second: date.getSeconds(),
-		millisecond: date.getMilliseconds(),
-	});
+	const diffInMilliseconds = now.getTime() - date.getTime();
 
-	const now = Temporal.Now.plainDateTimeISO();
-	const diffInHours = now.since(convertedDate, { largestUnit: 'hours' }).hours;
+	const diffInHours = diffInMilliseconds / 1000 / 60 / 60;
+
 	return diffInHours >= Number(hours);
 }
 
@@ -22,7 +14,7 @@ const RECORDS_BATCH_SIZE = 500;
  * Creates a cache object with two methods: add and getKeys.
  * */
 function r2CacheCollector() {
-	let keys: string[] = [];
+	const keys: string[] = [];
 	return {
 		add: function (key: string) {
 			keys.push(key);
