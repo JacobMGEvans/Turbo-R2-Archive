@@ -1,15 +1,21 @@
 import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
-import { HTTPException } from 'hono/http-exception';
 import { bearerAuth } from 'hono/bearer-auth';
 import { cors } from 'hono/cors';
+import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { bustOldCache } from './autoCacheBust';
 
 export const router = new Hono<{ Bindings: Env }>();
 
-const paramValidator = z.object({ artifactID: z.string(), teamID: z.string().optional() });
-const queryValidator = z.object({ teamId: z.string().optional(), slug: z.string().optional() });
+const paramValidator = z.object({
+	artifactID: z.string(),
+	teamID: z.string().optional(),
+});
+const queryValidator = z.object({
+	teamId: z.string().optional(),
+	slug: z.string().optional(),
+});
 
 router.onError((error, c) => {
 	if (error instanceof HTTPException) {
@@ -21,19 +27,19 @@ router.onError((error, c) => {
 router.use('*', cors());
 
 router.use('*', async (c, next) => {
-	const middleware = bearerAuth({ token: 'SECRET' });
+	const middleware = bearerAuth({ token: c.env.TURBO_TOKEN });
 	await middleware(c, next);
 });
 
-router.post('/artifacts/manual-cache-bust', zValidator('json', z.object({ expireInHours: z.number().optional() })), async (c) => {
-	const { expireInHours } = c.req.valid('json');
+router.post('/artifacts/manual-cache-bust', async (c) => {
 	/**
-	 * manual cache busting, if no expiration hours are provided, it will bust the entire cache.
+	 * manual cache busting, it will bust the entire cache.
 	 */
 	await bustOldCache({
 		...c.env,
-		EXPIRATION_HOURS: expireInHours ?? 0,
 	});
+
+	// maybe this could return the keys that were busted?
 	return c.json({ success: true });
 });
 
@@ -73,7 +79,7 @@ router.get('/v8/artifacts/:artifactID', zValidator('param', paramValidator), zVa
 
 	if (artifactID === 'list') {
 		const list = await c.env.R2_ARTIFACT_ARCHIVE.list();
-		return c.json(list.objects.map((object) => object));
+		return c.json(list.objects);
 	}
 
 	const r2Object = await c.env.R2_ARTIFACT_ARCHIVE.get(`${teamID}/${artifactID}`);
