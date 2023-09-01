@@ -1,4 +1,5 @@
 // For scheduled R2 cache busting, the R2 lifecycle rules can be used to delete an object after a certain amount of time.
+// https://blog.cloudflare.com/introducing-object-lifecycle-management-for-cloudflare-r2/
 
 async function bustEntireCache(list: R2Objects, R2_ARTIFACT_ARCHIVE: Env['R2_ARTIFACT_ARCHIVE']) {
 	const allObjectKeys = list.objects.map((o) => o.key);

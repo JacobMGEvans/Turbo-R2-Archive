@@ -95,7 +95,8 @@ router.get('/v8/artifacts/:artifactID', zValidator('param', paramValidator), zVa
 });
 
 router.post('/v8/artifacts/events', (c) => {
-	// Hook this up to Cloudflare Analytics
-	c.status(204);
-	return c.body(null);
+	console.log('event body', c.req.body);
+	// pull everything out of the request into a json object
+	c.status(200);
+	return c.json({ ...c.req });
 });
