@@ -4,7 +4,7 @@
 
 ## Overview
 
-This is a Worker that will act as an event server for caching TurboRepo artifacts. Compliant with the TurboRepo API, for remote caching, it will store the cache artifacts in a Cloudflare R2 bucket and purge the cache on a schedule. This allows for all the benefits of remote caching TurboRepo artifacts on Cloudflare's edge network.
+This is a Worker that will act as an event server for caching TurboRepo artifacts. Compliant with the TurboRepo API, for remote caching, it will store the cache artifacts in a Cloudflare R2 bucket and purge the R2 Objects on a schedule, using [R2 Object lifecycle rules](https://blog.cloudflare.com/introducing-object-lifecycle-management-for-cloudflare-r2/). This allows for all the benefits of remote caching TurboRepo artifacts on Cloudflare's edge network.
 
 This will require a Cloudflare account, with a zone and R2.
 
