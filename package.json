@@ -14,7 +14,8 @@
 		"deploy": "wrangler deploy -j",
 		"start": "wrangler dev -j",
 		"build": "wrangler deploy -j --dry-run --outdir=./dist",
-		"type:check": "tsc --noEmit"
+		"type:check": "tsc --noEmit",
+		"nuke": "rm -rf .turbo .wrangler dist node_modules"
 	},
 	"devDependencies": {
 		"@cloudflare/workers-types": "^4.20230821.0",
